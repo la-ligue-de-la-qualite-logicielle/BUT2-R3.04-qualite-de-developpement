@@ -978,12 +978,12 @@
                 >. Il faut savoir faire des compromis et contracter
                 intentionnellement de la dette. Idéalement il faut une trace de
                 cette dette contractée et un plan pour la rembourser. Cela
-                demande de l'expérience.
+                demande de l'expérience et de la discipline, et un peu d'outils.
               </li>
               <li>
                 Le code est vivant : le refactoring est une pratique
                 d'amélioration continue qui permet de viser la qualité.
-                D'ailleurs on dit que le code qui est rarement édité "pourri".
+                D'ailleurs on dit que le code qui est rarement édité "pourrit".
               </li>
             </ul>
           </section>
@@ -1037,9 +1037,9 @@
             </blockquote>
             <p class="fragment fade-up">OK... Ne fuyez pas !</p>
             <blockquote class="fragment fade-up r-fit-text">
-              En Functional Programming (FP), on réalise des applications avec
-              des fonctions réalisent des opérations qui ne produisent
-              <strong>pas d'effet secondaire (ou side effect)</strong>.
+              En Functional Programming (FP), les fonctions réalisent des
+              opérations qui ne produisent
+              <strong>pas d'effets secondaires (ou side effects)</strong>.
             </blockquote>
           </section>
           <section data-background-color="black">
@@ -1924,57 +1924,326 @@
               <li>Structuraux</li>
               <li>Comportementaux</li>
             </ul>
+            <aside class="notes">
+              Les design patterns, ou patrons de conception en français, sont des
+              solutions réutilisables à des problèmes de conception récurrents.
+              Dès 1977 Christopher Alexander a publié un essai intitulé "A Pattern Language: Towns, Buildings, Construction".
+              C'est ensuite en 1994 que les design patterns ont été popularisés par le livre
+              <a href="http://www.javier8a.com/itc/bd1/articulo.pdf"></a>Design Patterns: Elements of Reusable Object Oriented Software</a>.
+              Ses 4 auteurs ont été surnommés le "Gang of Four"
+              (Erich Gamma, Richard Helm, Ralph Johnson et John Vlissides).
+              Ils ont beaucoup contribué à la programmation orientée objet et à la mise en place
+              des pratiques de tests unitaires. Ils décrivent ainsi 23 design patterns répartis dans 3 catégories.
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>1. Designs Patterns Créationels</h2>
+            <h2 style="margin-bottom: 0">Patterns Créationels</h2>
+            <p style="margin-top: 0" class="r-fit-text">
+              Fournissent des moyens pratiques de créer des objets
+            </p>
+            <ul class="r-fit-text">
+              <li>Singleton : à éviter le plus souvent, cf SOLID/STUPID</li>
+              <li>Prototype : revient très souvent à implémenter clone</li>
+              <li><strong>Factory</strong></li>
+              <li><strong>Builder</strong></li>
+            </ul>
+            <aside class="notes">On va passer en revue Factory et Builder à travers des exemples concrets</aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Factory</h2>
+            <p>On crée une classe dont la seule responsabilité est de fabriquer des classes se conformant à une interface. Exemple : <a href="https://github.com/symfony/symfony/blob/991c2bad292c4c4af17328c331507a5a7789512c/src/Symfony/Component/Lock/LockFactory.php">Symfony LockFactory</a></p>
+            <aside class="notes"></aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Builder</h2>
+            <p>Permet de créer un objet ou une structure d'objet par l'intermédiaire d'une classe qui
+              va construire l'objet étape par étape. Exemple : <a href="https://github.com/symfony/symfony/blob/991c2bad292c4c4af17328c331507a5a7789512c/src/Symfony/Component/Workflow/DefinitionBuilder.php#L23-L43">Symfony Workflow DefinitionBuilder</a>
+            </p>
+            <aside class="notes">
+              Très pratique car on peut décrire la création du/des objets à la manière d'une recette de cuisine,
+              puis ensuite on peut l'exécuter, c'est prêt !
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2 style="margin-bottom: 0">Patterns Structuraux</h2>
+            <p style="margin-top: 0" class="r-fit-text">
+              Permettent d'assembler des objets dans des structures plus larges tout en conservant une structuration flexible et efficace.
+            </p>
+            <ul class="r-fit-text">
+              <li><strong>Adapter</strong> : permet à des objets aux interfaces incompatibles de collaborer</li>
+              <li><strong>Bridge</strong> : permet de découpler une abstraction de son implémentation afin que les deux puissent varier indépendamment</li>
+              <li><strong>Composite</strong> : permet de composer des objets dans des structures et travailler sur les structures comme s'il s'agissait d'objets individuels</li>
+            </ul>
+          </section>
+          <section data-background-color="black">
+            <h2 style="margin-bottom: 0">Patterns Structuraux</h2>
+            <ul class="r-fit-text">
+              <li><strong>Decorator</strong> : permet d'attacher dynamiquement de nouvelles responsabilités à un objet existant sans le modifier et sans héritage, par composition</li>
+              <li><strong>Proxy</strong> : permet de fournir un objet se substituant à un autre et de de réaliser certaines opérations autour du cycle de vie de l'objet d'origine</li>
+              <li><strong>Façade</strong> : permet de fournir une interface simplifiée à un ensemble de classes complexes</li>
+              <li><strong>Flyweight</strong> : permet de gérer de manière efficiente de grands ensembles d'objets</li>
+            </ul>
+          </section>
+          <section data-background-color="black">
+            <h2>Design Pattern Adapter</h2>
+            <pre data-id="code-animation">
+							<code class="hljs" data-trim data-line-numbers="3-10|12-16|19-32">
+              &lt;?php
+
+              // Une interface qu'on veut adapter en Notification
+              interface SlackApi {
+                  public function login(string $token);
+                  public function sendMessage(
+                    string $channel,
+                    string $message,
+                  );
+              }
+
+              // Notre interface de notification
+              interface Notification
+              {
+                  public function send(string $title, string $message);
+              }
+
+
+              // Notre adapter
+              final readonly class SlackNotification implements Notification
+              {
+                  public function __construct(
+                    private SlackApi $slack,
+                    private string $token,
+                  ) {}
+
+                  public function send(string $title, string $message)
+                  {
+                      $this->slack->login($this->token);
+                      $this->slack->sendMessage('#general', $title.': '.$message);
+                  }
+              }
+							</code>
+            </pre>
+            <aside class="notes">
+            On voit qu'on a réussi à adapter l'interface de SlackApi
+            - sûrement fournie par une dépendance externe qu'on ne peut pas changer -
+            à notre interface de Notification. On pourrait créer un autre adapter pour une autre
+            API de notification concrète (Email : MailgunEmail, SMS : TwilioSMS, etc.)
+          </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Bridge</h2>
+            <p>
+              Dès que l'on souhaite faire varier une abstraction en fonction de sa dépendance, on peut utiliser le Bridge.
+              Par exemple <a href="https://refactoring.guru/design-patterns/bridge/php/example#example-1">comment rendre une même structure de données dans différent formats</a>
+            </p>
+            <aside class="notes">
+            À utiliser par exemple lorsqu'on souhaite :
+            <ul>
+              <li>Varianter des fonctionnalités d'une classe (ex: compatibilité avec plusieurs bases de données/format)</li>
+              <li>Étendre une classe selon des dimensions orthogonales (ex: couleur, forme d'une classe produit, on crée alors des sous classes responsables de chaque dimension, le produit délégue alors les responsabilités)</li>
+              <li>Pouvoir intervertir des implémentation au runtime</li>
+            </ul>
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Composite</h2>
+            <p>Dès que l'on a une structure d'objets de type arbre, il es courant de l'utiliser pour se faciliter la vie.
+              Par exemple <a href="https://refactoring.guru/design-patterns/composite/php/example#example-1">comment créer le rendu d'un formulaire HTML</a>
+            </p>
+            <aside class="notes">
+              À utiliser par exemple qu'on souhaite :
+              <ul>
+                <li>Gérer uniformément une structure de type arbre, grâce à l'interface commune, à base de contenant et d'enfants.</li>
+                <li>Gérer uniformément des éléments simples et complexes, car grâce à l'interface pas besoin de se soucier de la classe concrète des éléments manipulés et de leur complexité</li>
+              </ul>
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Decorator</h2>
+            <pre data-id="code-animation">
+							<code class="hljs" data-trim data-line-numbers="3-6|8-16|18-27|29-34">
+          &lt;?php
+
+          // Notre interface de chargement de blob
+          interface BlobLoader {
+              public function load(string $blob): string;
+          }
+
+          final class FileToBlobLoader implements BlobLoader {
+              public __construct(private BlobLoader $loader) {}
+
+              public function load(string $fileName): string {
+                  $content = file_get_contents($fileName);
+
+                  return $this->loader->load($content);
+              }
+          }
+
+          // Décorateur gérant la compression du fichier
+          final class CompressedBlobLoader implements BlobLoader {
+              public function load(string $content): string {
+                  if (substr($content, 0, 2) !== 'gz') {
+                      return $content;
+                  }
+
+                  return gzdecode($content);
+              }
+          }
+
+          // On peut maintenant charger un fichier compressé
+          // sans héritage, par composition
+          $loader = new FileToBlobLoader(
+            new CompressedBlobLoader()
+          );
+          $loader->load('file.txt');
+							</code>
+            </pre>
+            <aside class="notes">
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Proxy</h2>
+            <pre data-id="code-animation">
+							<code class="hljs" data-trim data-line-numbers="3-5|7-13|15-29">
+          &lt;?php
+
+          interface HttpClient {
+              public function get(string $url): string;
+          }
+
+          final readonly class SomeApiClient implements HttpClient {
+              public function __construct(private HttpClient $client) {}
+
+              public function get(string $url): string {
+                  return $this->client->get($url);
+              }
+          }
+
+          final readonly class LogTimeOfApiClientProxy implements HttpClient {
+              public function __construct(
+                private SomeApiClient $client,
+                private LoggerInterface $logger,
+              ) {}
+
+              public function get(string $url): string {
+                  $start = microtime(true);
+                  $response = $this->client->getSomeData();
+                  $end = microtime(true);
+                  $this->logger->info('Call took ' . ($end - $start) . ' seconds');
+
+                  return $response;
+              }
+          }
+							</code>
+            </pre>
+            <aside class="notes">
+              Très proche dans le principe de l'adapter, mais on ne change pas l'interface de la classe cible, on la cache.
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Facade</h2>
+            <p>
+              On viole intentionnellement des principes SOLID avec la façade dans un but de simplification, pour exposer simplemnt un sous système complexe.
+              Par exemple, <a href="https://refactoring.guru/design-patterns/facade/php/example#example-1">Comment simplifier l'usage d'une API : télécharger une vidéo Youtube</a>
+            </p>
+            <aside class="notes">
+              Contrairement à l'adapter qui encapsule une classe, la façade encapsule une API,
+              un ensemble de classes, dans le but de simplifier l'usage de cette API et fournir une interface simple.
+
+              Le seul défaut de la façade est qu'elle peut devenir un "god object" car elle oriente des implémentations concrètes et effectue des appels sur plusieus classes instanciées.
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2>Flyweight</h2>
+            <p>
+              Lorsque l'on a besoin d'optimiser/mutualiser des ressources en mémoire, très proche des principes
+              de mémoization qu'on trouve en programmation foncionnelle, ici adapté à la programmation objet.
+              <a href="https://refactoring.guru/design-patterns/flyweight">Pour aller plus loin</a>
+            </p>
+            <aside class="notes">
+            </aside>
+          </section>
+          <section data-background-color="black">
+            <h2 style="margin-bottom: 0">Patterns Comportementaux</h2>
+            <p style="margin-top: 0" class="r-fit-text">
+              Utilisés dans les algorithmes et la répartition des responsabilités entre objets.
+            </p>
+            <ul class="r-fit-text">
+              <li><strong>Chain of Responsibility</strong> : permet de passer un objet à une chaîne d'objets jusqu'à ce qu'il soit traité par un objet de cette chaîne</li>
+              <li><strong>Command</strong> : encapsule une demande dans un objet, permettant de décider comment traiter ou annuler cette demande</li>
+              <li><strong>Iterator</strong> : permet de parcourir séquentiellement une aggrégation d'objets sans avoir à exposer leur représentation</li>
+              <li><strong>Mediator</strong> : définit un objet qui encapsule comment un ensemble d'objet interragissent</li>
+              <li><strong>Memento</strong> : capture et externalise l'état d'un objet dans le but de le restaurer, sans violer l'encapsulation</li>
+            </ul>
+          </section>
+          <section data-background-color="black">
+            <h2 style="margin-bottom: 0">Patterns Comportementaux</h2>
+            <ul class="r-fit-text">
+              <li><strong>Observer</strong> : mécanisme d'abonnement pour notifier de multiples objets de tout événement se produisant sur un objet observé</li>
+              <li><strong>State</strong> : permet à un objet d'altérer son comportement lorsque son état interne change</li>
+              <li><strong>Strategy</strong> : permet de définir un ensemble d'algorithmes dans des classes distinctes et interchangeables</li>
+              <li><strong>Template Method</strong> : définit le skelette d'un algorithme tout en laissant les sous classes surcharger des étapes spécifiques sans en changer la structure</li>
+              <li><strong>Visitor</strong> : permet de cibler des algorithmes en fonction des objets parcourus</li>
+            </ul>
+          </section>
+          <section data-background-color="black">
+            <h2>Chain Of Responsibility</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Factory Method</h2>
+            <h2>Command</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Prototype</h2>
+            <h2>Iterator</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Builder</h2>
+            <h2>Mediator</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Singleton</h2>
+            <h2>Memento</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>2. Designs Patterns Structuraux</h2>
+            <h2>Observer</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Adapter</h2>
+            <h2>State</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Composite</h2>
+            <h2>Strategy</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>Le Design Pattern Decorator</h2>
+            <h2>Template Method</h2>
             <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
-            <h2>3. Designs Patterns Comportementaux</h2>
-          </section>
-          <section data-background-color="black">
-            <h2>Le Design Pattern Observer ou Event Dispatcher</h2>
+            <h2>Visitor</h2>
             <p>TBD</p>
-          </section>
-          <section data-background-color="black">
-            <h2>Le Design Pattern Strategy</h2>
-            <p>TBD</p>
-          </section>
-          <section data-background-color="black">
-            <h2>Le Design Pattern State</h2>
-            <p>TBD</p>
+            <aside class="notes">
+            </aside>
           </section>
         </section>
         <section>
@@ -1984,6 +2253,8 @@
             style="backdrop-filter: blur(4px); padding: 20px"
           >
             <h2>Ajoutez du contrôle qualité</h2>
+            <aside class="notes">
+            </aside>
           </section>
           <section data-background-color="black">
             <h2>Intro - TBD</h2>
@@ -1999,6 +2270,8 @@
           </section>
           <section data-background-color="black">
             <h2>Intro - TBD</h2>
+            <aside class="notes">
+            </aside>
           </section>
         </section>
       </div>
@@ -2020,7 +2293,8 @@
         center: true,
         hash: true,
 
-        // Learn about plugins: https://revealjs.com/plugins/
+        // Learn about plugins
+        // https://revealjs.com/plugins/
         plugins: [
           RevealMarkdown,
           RevealHighlight,
